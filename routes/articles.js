@@ -5,6 +5,37 @@ var Article = require("../models/article");
 var Tag = require("../models/tag");
 var auth = require("../middlewares/auth");
 var Comment = require("../models/comment");
+var slug = require("slug");;
+
+// Article Feed:
+
+router.get("/feed", auth.verifyToken, async (req, res, next)=>{
+    try {
+        var user = await User.findById(req.user.userId);
+        var articleFeed = await Article.find({author:{$in: user.following}}).sort({updatedAt:-1}).limit(req.query.limit || 20)
+        console.log(articleFeed);
+        res.status(200).json({
+            articleFeed
+        }) 
+    } catch (error) {
+        next(error)
+        
+    }
+})
+
+// List of articles:
+router.get("/", async(req, res, next)=>{
+    try {
+        console.log(req.query);
+        var articleList = await Article.find().pupulate('author', 'name').limit(req.query.limit || 20)
+        res.status(200).json({
+            articleList
+        })
+    } catch (error) {
+        next(error)
+    }
+})
+
 
 // Create article:
 
@@ -59,11 +90,19 @@ router.put("/:slug", auth.verifyToken, async (req, res, next)=>{
     try {
         var user = await User.findById(req.user.userId);
         req.body.article.author = req.user.userId;
+        req.body.article.slug = slug(req.body.article.title,{lower:true});
         var article = await Article.findOneAndUpdate({slug: req.params.slug}, req.body.article, {new:true});
-        console.log(article);
-        res.status(200).json({
+        // // article.save((error, document) => {
+        // //     if (error) { console.log(error) }
+        // //     console.log(document);
+        //     res.status(200).json({
+        //         document
+        //     }) 
+        //  });
+        console.log("article", article);
+        res.json({
             article
-        }) 
+        })
     } catch (error) {
         next(error)
     }
@@ -83,7 +122,8 @@ router.delete("/:slug", auth.verifyToken, async (req, res, next)=>{
         next(error)
     }
 
-})
+});
+
 
 ////////////////// Comment ////////////////////
 
@@ -164,7 +204,6 @@ router.delete("/:slug/favorite", auth.verifyToken, async(req, res, next)=>{
     } catch (error) {
         next(error)
     }
-
 })
 
 
