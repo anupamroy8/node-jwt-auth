@@ -138,11 +138,11 @@ router.delete("/api/profiles/:username/follow", auth.verifyToken , async (req, r
 
 ////////////////// Tag ////////////////////
 
-// Get list of atgs
+// Get list of tags
 router.get("/api/tags", async (req, res,next)=>{
   console.log(req._parsedUrl);
   
-  var tags = await Tag.find({},{ tagName: 1 });
+  var tags = await Tag.distinct("tagName");
   res.status(200).json({
     tags
   })
